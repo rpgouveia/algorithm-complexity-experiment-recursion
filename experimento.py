@@ -8,11 +8,14 @@ from algorithms.merge_sort_recursivo_random import merge_sort_recursivo_random_w
 from algorithms.select_sort_recursivo import select_sort_recursivo_wapper
 from algorithms.select_sort_recursivo_random import select_sort_recursivo_random_wapper
 from algorithms.sellSort_base_line import shellSort_Wapper
+from algorithms.Insertion_sort_interativo import insertion_sort_interativo
+from algorithms.insertion_sort_recursivo import IS_recursivo
 # from gerador import gerar_dados_crescente
 # from gerador import gerar_dados_random
 from gerador import gerar_dados_decrescente
 from gerador import agora
 from gerador import dif_time
+
 
 def teste():
     X = [58, 30, 97, 21, 81, 35, 48, 59, 24, 2, -1]
@@ -80,6 +83,17 @@ def execucao(X, i):
     BASE_LINE = shellSort_Wapper(X.copy())
     b = agora()
     D.append(dif_time(b,a))
+    
+
+    a = agora()
+    S1 = insertion_sort_interativo(X.copy())
+    b = agora()
+    D.append(dif_time(b,a))
+
+    a = agora()
+    S2 = IS_recursivo(X.copy())
+    b = agora()
+    D.append(dif_time(b,a))
 
     return D
 
@@ -98,7 +112,7 @@ for i in range(1, N+1, 1):
     X = gerar_dados_decrescente( i * T )
     L.append( execucao(X, i) )
 
-print('QS1,QS2,MS1,MS2,MS3,SS1,SS2,BASE_LINE')
+print('QS1,QS2,MS1,MS2,MS3,SS1,SS2,BASE_LINE,IS1,IS2')
 for x in L:
     c = len(x) - 1
     i = 0
