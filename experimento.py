@@ -10,8 +10,8 @@ from algorithms.select_sort_recursivo_random import select_sort_recursivo_random
 from algorithms.sellSort_base_line import shellSort_Wapper
 from algorithms.Insertion_sort_interativo import insertion_sort_interativo
 from algorithms.insertion_sort_recursivo import IS_recursivo
-# from gerador import gerar_dados_crescente
-# from gerador import gerar_dados_random
+from gerador import gerar_dados_crescente
+from gerador import gerar_dados_random
 from gerador import gerar_dados_decrescente
 from gerador import agora
 from gerador import dif_time
@@ -40,6 +40,11 @@ def teste():
 
     BASE_LINE = shellSort_Wapper(X.copy())
     print(f'Sell Sort [Baseline]: {BASE_LINE}')
+
+    IS1 = insertion_sort_interativo(X.copy())
+    IS2 = IS_recursivo(X.copy())
+    print(f'Insertion sort interativo: {IS1}')
+    print(f'Insertion sort recursivo: {IS2}')
 
 def execucao(X, i):
     D = []
@@ -109,7 +114,9 @@ L = []
 
 for i in range(1, N+1, 1):
     print('O tamanho do problema',i, ' é ', i * T)
-    X = gerar_dados_decrescente( i * T )
+    # X = gerar_dados_decrescente( i * T )
+    X = gerar_dados_crescente( i * T )
+    # X = gerar_dados_random( i * T )
     L.append( execucao(X, i) )
 
 print('QS1,QS2,MS1,MS2,MS3,SS1,SS2,BASE_LINE,IS1,IS2')

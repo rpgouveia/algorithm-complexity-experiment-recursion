@@ -15,12 +15,9 @@ def shellSort(array, a):
             j = i
             k3 = 3
             while j >= mid and array[j - mid] > chave:
-                print(k1,k2,k3, mid)
-                array[j] = array[j - mid]
-                j = j - mid
-            array[j] = chave
-        print()
-    return array
+                    array[j] = array[j - mid]
+                    j = j - mid
+                    array[j] = chave
 
 def shellSort_Wapper(array):
     return shellSort(array, len(array))

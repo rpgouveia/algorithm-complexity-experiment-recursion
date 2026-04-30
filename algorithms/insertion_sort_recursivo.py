@@ -1,6 +1,6 @@
 def insertion_sort_recursivo(arr, n):
     if n <= 1:
-        return
+        return arr
     insertion_sort_recursivo(arr, n - 1)
     last = arr[n - 1]
     j = n - 2

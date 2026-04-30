@@ -2,7 +2,7 @@ def insertion_sort_interativo(arr):
     n = len(arr)
     
     if n <= 1:
-        return
+        return arr
     for i in range(1, n):
         key = arr[i]         
         j = i - 1
