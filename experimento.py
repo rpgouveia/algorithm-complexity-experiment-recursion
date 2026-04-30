@@ -1,4 +1,5 @@
 import sys
+import os
 from algorithms.quick_sort_recursivo import quick_sort_recursivo_wapper
 from algorithms.quick_sort_random import quick_sort_recursivo_random_wapper
 from algorithms.merge_sort_interativo import Merge_Sort_interativo_wapper
@@ -17,7 +18,7 @@ from gerador import agora, dif_time
 # ─────────────────────────────────────────────
 T = 250     # tamanho base do problema
 N = 20      # número de iterações
-CENARIO = "random"   # "crescente" | "decrescente" | "random"
+CENARIO = "crescente"   # "crescente" | "decrescente" | "random"
 
 GERADORES = {
     "crescente":   gerar_dados_crescente,
@@ -86,8 +87,14 @@ for i in range(1, N + 1):
     X = gerar(tamanho)
     resultados.append(execucao(X))
 
-# Imprime CSV
+# Imprime e salva CSV
 cabecalho = ",".join(rotulo for rotulo, _ in ALGORITMOS)
-print(cabecalho)
-for linha in resultados:
-    print(",".join(str(t) for t in linha))
+linhas_csv = [cabecalho] + [",".join(str(t) for t in linha) for linha in resultados]
+print("\n".join(linhas_csv))
+
+os.makedirs("docs", exist_ok=True)
+nome_arquivo = os.path.join("docs", f"resultado-{CENARIO}.csv")
+with open(nome_arquivo, "w", encoding="utf-8") as f:
+    f.write("\n".join(linhas_csv) + "\n")
+
+print(f"\nResultados salvos em: {nome_arquivo}")
