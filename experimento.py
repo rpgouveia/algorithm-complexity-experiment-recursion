@@ -13,9 +13,8 @@ from algorithms.insertion_sort_recursivo import IS_recursivo
 from gerador import gerar_dados_crescente, gerar_dados_random, gerar_dados_decrescente
 from gerador import agora, dif_time
 
-# ─────────────────────────────────────────────
+
 # Configurações do experimento
-# ─────────────────────────────────────────────
 T = 250     # tamanho base do problema
 N = 20      # número de iterações
 CENARIO = "crescente"   # "crescente" | "decrescente" | "random"
@@ -40,10 +39,8 @@ ALGORITMOS = [
     ("IS2",       IS_recursivo),
 ]
 
-# ─────────────────────────────────────────────
-# Funções auxiliares
-# ─────────────────────────────────────────────
 
+# Funções auxiliares
 def medir(fn, dados):
     """Executa fn(dados) e retorna o tempo gasto em milissegundos."""
     a = agora()
@@ -70,10 +67,7 @@ def teste():
         print(f"  {ok} {rotulo}: {resultado}")
 
 
-# ─────────────────────────────────────────────
 # Execução principal
-# ─────────────────────────────────────────────
-
 # Aumenta o limite de recursão para os algoritmos recursivos profundos
 sys.setrecursionlimit(100_000)
 print(f"Limite de recursão: {sys.getrecursionlimit()}")

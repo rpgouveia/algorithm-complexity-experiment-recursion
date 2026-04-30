@@ -4,9 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-# ─────────────────────────────────────────────
+
 # Configurações
-# ─────────────────────────────────────────────
 GRAU = 2          # grau do polinômio de regressão (2 = quadrático)
 SALVAR = True     # True: salva PNGs em docs/graficos/  |  False: só exibe
 PASTA_SAIDA = os.path.join("docs", "graficos")
@@ -38,9 +37,7 @@ ROTULOS = {
 
 X = np.array([250 * i for i in range(1, 21)])
 
-# ─────────────────────────────────────────────
 # Leitura dos CSVs
-# ─────────────────────────────────────────────
 def ler_csv(caminho):
     """Lê um CSV e retorna dict {coluna: [valores]}."""
     with open(caminho, newline="", encoding="utf-8") as f:
@@ -60,9 +57,7 @@ if not dados:
 
 algoritmos = list(next(iter(dados.values())).keys())
 
-# ─────────────────────────────────────────────
 # Funções auxiliares
-# ─────────────────────────────────────────────
 def r_quadrado(y, y_fit):
     """Calcula o coeficiente de determinação R²."""
     ss_res = np.sum((y - y_fit) ** 2)
@@ -88,9 +83,7 @@ def formatar_equacao(coefs, grau):
     eq = " + ".join(termos).replace("+ -", "− ")
     return f"f(x) = {eq}"
 
-# ─────────────────────────────────────────────
 # Geração dos gráficos — um por algoritmo
-# ─────────────────────────────────────────────
 if SALVAR:
     os.makedirs(PASTA_SAIDA, exist_ok=True)
 
@@ -168,9 +161,7 @@ for alg in algoritmos:
     plt.show()
     plt.close(fig)
 
-# ─────────────────────────────────────────────
 # Painel resumo — todos os algoritmos em grid
-# ─────────────────────────────────────────────
 n_alg = len(algoritmos)
 n_cols = 5
 n_rows = (n_alg + n_cols - 1) // n_cols
