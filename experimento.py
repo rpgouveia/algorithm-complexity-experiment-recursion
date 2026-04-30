@@ -1,5 +1,4 @@
 import sys
-
 from algorithms.quick_sort_recursivo import quick_sort_recursivo_wapper
 from algorithms.quick_sort_random import quick_sort_recursivo_random_wapper
 from algorithms.merge_sort_interativo import Merge_Sort_interativo_wapper
@@ -18,6 +17,10 @@ from gerador import dif_time
 
 
 def teste():
+    """
+    Função de teste para verificar a implementação dos algoritmos de ordenação.
+    Ela cria uma lista de números, executa os algoritmos de ordenação e imprime os resultados.
+    """
     X = [58, 30, 97, 21, 81, 35, 48, 59, 24, 2, -1]
     print(f'X : {X}')
 
@@ -47,6 +50,15 @@ def teste():
     print(f'Insertion sort recursivo: {IS2}')
 
 def execucao(X, i):
+    """
+    Executa os algoritmos de ordenação e mede o tempo gasto para cada um deles,
+    retornando uma lista com os tempos de execução.
+    Parâmetros:
+        - X: lista de números a ser ordenada
+        - i: índice do teste atual (usado para exibição de progresso)
+    Retorna:
+        - D: lista de tempos de execução para cada algoritmo
+    """
     D = []
 
     a = agora()
@@ -102,16 +114,19 @@ def execucao(X, i):
 
     return D
 
-limite = sys.getrecursionlimit()
+# Configurações de limite de chamadas de recursão
+limite = sys.getrecursionlimit()        # limite padrão do python é 1000
 print('Limite de memória: ', limite)
 sys.setrecursionlimit(100000)
 limite = sys.getrecursionlimit()
 print('Limite de memória: ', limite)
 
-T = 250
-N = 20
-L = []
+# Configurações de teste e execução
+T = 250     # tamanho base do problema
+N = 20      # número de execuções
+L = []      # lista de resultados
 
+# Gerar os dados e executar os algoritmos para cada tamanho de problema
 for i in range(1, N+1, 1):
     print('O tamanho do problema',i, ' é ', i * T)
     # X = gerar_dados_decrescente( i * T )
@@ -119,6 +134,7 @@ for i in range(1, N+1, 1):
     # X = gerar_dados_random( i * T )
     L.append( execucao(X, i) )
 
+# Imprimir os resultados em formato CSV
 print('QS1,QS2,MS1,MS2,MS3,SS1,SS2,BASE_LINE,IS1,IS2')
 for x in L:
     c = len(x) - 1
