@@ -1,5 +1,5 @@
 # Algorithm Complexity Experiment - Recursion
-PUCPR Projeto Colaborativo 1 sobre Recursão
+PUCPR - Complexidade de Algoritmos - Projeto Colaborativo 1
 
 ## Descrição
 
@@ -153,7 +153,7 @@ Cada gráfico mostra:
 Uma função $O(n^2)$ será representada por um polinômio de grau 2, enquanto $O(n \log n)$ se aproximará mais de um polinômio de grau 2 mas com coeficientes menores.
 
 ## 📝 Autores
-Angelo Netho
-Angelo Piovezan
-Hugo Fagundes
-Renato Gouveia
+- Angelo Netho
+- Angelo Piovezan
+- Hugo Fagundes
+- Renato Gouveia
