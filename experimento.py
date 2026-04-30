@@ -9,141 +9,85 @@ from algorithms.select_sort_recursivo_random import select_sort_recursivo_random
 from algorithms.sellSort_base_line import shellSort_Wapper
 from algorithms.Insertion_sort_interativo import insertion_sort_interativo
 from algorithms.insertion_sort_recursivo import IS_recursivo
-from gerador import gerar_dados_crescente
-from gerador import gerar_dados_random
-from gerador import gerar_dados_decrescente
-from gerador import agora
-from gerador import dif_time
+from gerador import gerar_dados_crescente, gerar_dados_random, gerar_dados_decrescente
+from gerador import agora, dif_time
+
+# ─────────────────────────────────────────────
+# Configurações do experimento
+# ─────────────────────────────────────────────
+T = 250     # tamanho base do problema
+N = 20      # número de iterações
+CENARIO = "random"   # "crescente" | "decrescente" | "random"
+
+GERADORES = {
+    "crescente":   gerar_dados_crescente,
+    "decrescente": gerar_dados_decrescente,
+    "random":      gerar_dados_random,
+}
+
+# Tabela de algoritmos: (rótulo CSV, função wrapper)
+ALGORITMOS = [
+    ("QS1",       quick_sort_recursivo_wapper),
+    ("QS2",       quick_sort_recursivo_random_wapper),
+    ("MS1",       Merge_Sort_interativo_wapper),
+    ("MS2",       merge_sort__recursivo_wapper),
+    ("MS3",       merge_sort_recursivo_random_wapper),
+    ("SS1",       select_sort_recursivo_wapper),
+    ("SS2",       select_sort_recursivo_random_wapper),
+    ("BASE_LINE", shellSort_Wapper),
+    ("IS1",       insertion_sort_interativo),
+    ("IS2",       IS_recursivo),
+]
+
+# ─────────────────────────────────────────────
+# Funções auxiliares
+# ─────────────────────────────────────────────
+
+def medir(fn, dados):
+    """Executa fn(dados) e retorna o tempo gasto em milissegundos."""
+    a = agora()
+    fn(dados)
+    return dif_time(agora(), a)
+
+
+def execucao(dados):
+    """
+    Executa todos os algoritmos sobre uma cópia dos dados de entrada e
+    retorna a lista de tempos de execução em milissegundos.
+    """
+    return [medir(fn, dados.copy()) for _, fn in ALGORITMOS]
 
 
 def teste():
-    """
-    Função de teste para verificar a implementação dos algoritmos de ordenação.
-    Ela cria uma lista de números, executa os algoritmos de ordenação e imprime os resultados.
-    """
-    X = [58, 30, 97, 21, 81, 35, 48, 59, 24, 2, -1]
-    print(f'X : {X}')
+    """Smoke test rápido para verificar que todos os algoritmos ordenam corretamente."""
+    referencia = [-1, 2, 21, 24, 30, 35, 48, 58, 59, 81, 97]
+    entrada = [58, 30, 97, 21, 81, 35, 48, 59, 24, 2, -1]
 
-    QS1 = quick_sort_recursivo_wapper(X.copy())
-    QS2 = quick_sort_recursivo_random_wapper(X.copy())
-    print(f'Quick sort recursivo: {QS1}')
-    print(f'Quick sort recursivo randomizado: {QS2}')
+    for rotulo, fn in ALGORITMOS:
+        resultado = fn(entrada.copy())
+        ok = "✓" if resultado == referencia else "✗"
+        print(f"  {ok} {rotulo}: {resultado}")
 
-    MS1 = Merge_Sort_interativo_wapper(X.copy())
-    MS2 = merge_sort__recursivo_wapper(X.copy())
-    MS3 = merge_sort_recursivo_random_wapper(X.copy())
-    print(f'Merge sort interativo: {MS1}')
-    print(f'Merge sort recursivo: {MS2}')
-    print(f'Merge sort recursivo randomizado: {MS3}')
 
-    SS1 = select_sort_recursivo_wapper(X.copy())
-    SS2 = select_sort_recursivo_random_wapper(X.copy())
-    print(f'Select sort recursivo: {SS1}')
-    print(f'Select sort recursivo randomizado: {SS2}')
+# ─────────────────────────────────────────────
+# Execução principal
+# ─────────────────────────────────────────────
 
-    BASE_LINE = shellSort_Wapper(X.copy())
-    print(f'Sell Sort [Baseline]: {BASE_LINE}')
+# Aumenta o limite de recursão para os algoritmos recursivos profundos
+sys.setrecursionlimit(100_000)
+print(f"Limite de recursão: {sys.getrecursionlimit()}")
 
-    IS1 = insertion_sort_interativo(X.copy())
-    IS2 = IS_recursivo(X.copy())
-    print(f'Insertion sort interativo: {IS1}')
-    print(f'Insertion sort recursivo: {IS2}')
+gerar = GERADORES[CENARIO]
+resultados = []
 
-def execucao(X, i):
-    """
-    Executa os algoritmos de ordenação e mede o tempo gasto para cada um deles,
-    retornando uma lista com os tempos de execução.
-    Parâmetros:
-        - X: lista de números a ser ordenada
-        - i: índice do teste atual (usado para exibição de progresso)
-    Retorna:
-        - D: lista de tempos de execução para cada algoritmo
-    """
-    D = []
+for i in range(1, N + 1):
+    tamanho = i * T
+    print(f"Iteração {i:02d} — tamanho: {tamanho}")
+    X = gerar(tamanho)
+    resultados.append(execucao(X))
 
-    a = agora()
-    QS1 = quick_sort_recursivo_wapper(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-
-    a = agora()
-    QS2 = quick_sort_recursivo_random_wapper(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-
-    a = agora()
-    MS1 = Merge_Sort_interativo_wapper(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-
-    a = agora()
-    MS2 = merge_sort__recursivo_wapper(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-
-    a = agora()
-    MS3 = merge_sort_recursivo_random_wapper(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-
-    a = agora()
-    SS1 = select_sort_recursivo_wapper(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-
-    a = agora()
-    SS2 = select_sort_recursivo_random_wapper(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-
-    a = agora()
-    BASE_LINE = shellSort_Wapper(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-    
-
-    a = agora()
-    S1 = insertion_sort_interativo(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-
-    a = agora()
-    S2 = IS_recursivo(X.copy())
-    b = agora()
-    D.append(dif_time(b,a))
-
-    return D
-
-# Configurações de limite de chamadas de recursão
-limite = sys.getrecursionlimit()        # limite padrão do python é 1000
-print('Limite de memória: ', limite)
-sys.setrecursionlimit(100000)
-limite = sys.getrecursionlimit()
-print('Limite de memória: ', limite)
-
-# Configurações de teste e execução
-T = 250     # tamanho base do problema
-N = 20      # número de execuções
-L = []      # lista de resultados
-
-# Gerar os dados e executar os algoritmos para cada tamanho de problema
-for i in range(1, N+1, 1):
-    print('O tamanho do problema',i, ' é ', i * T)
-    # X = gerar_dados_decrescente( i * T )
-    X = gerar_dados_crescente( i * T )
-    # X = gerar_dados_random( i * T )
-    L.append( execucao(X, i) )
-
-# Imprimir os resultados em formato CSV
-print('QS1,QS2,MS1,MS2,MS3,SS1,SS2,BASE_LINE,IS1,IS2')
-for x in L:
-    c = len(x) - 1
-    i = 0
-    for y in x:
-        if (i < c):
-            print(y, end=',')
-        else:
-            print(y, end='')
-        i +=1
-    print()
-
+# Imprime CSV
+cabecalho = ",".join(rotulo for rotulo, _ in ALGORITMOS)
+print(cabecalho)
+for linha in resultados:
+    print(",".join(str(t) for t in linha))
