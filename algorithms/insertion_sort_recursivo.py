@@ -9,6 +9,7 @@ def insertion_sort_recursivo(arr, n):
         j -= 1
 
     arr[j + 1] = last
+    return arr
 
 a = [-7, 11, 6, 0, -3, 5, 10, 2]
 insertion_sort_recursivo(a, len(a))
