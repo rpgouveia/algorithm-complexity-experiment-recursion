@@ -1,5 +1,6 @@
 import sys
 import os
+import threading
 from algorithms.quick_sort_recursivo import quick_sort_recursivo_wapper
 from algorithms.quick_sort_random import quick_sort_recursivo_random_wapper
 from algorithms.merge_sort_interativo import Merge_Sort_interativo_wapper
@@ -15,9 +16,10 @@ from gerador import agora, dif_time
 
 
 # Configurações do experimento
-T = 250     # tamanho base do problema
-N = 20      # número de iterações
-CENARIO = "crescente"   # "crescente" | "decrescente" | "random"
+T = 10_000              # tamanho base: 10.000 elementos
+N = 5                   # iterações → 10k, 20k, 30k, 40k, 50k
+CENARIO = "random"   # "crescente" | "decrescente" | "random"
+TIMEOUT = 60            # segundos
 
 GERADORES = {
     "crescente":   gerar_dados_crescente,
@@ -41,19 +43,52 @@ ALGORITMOS = [
 
 
 # Funções auxiliares
-def medir(fn, dados):
-    """Executa fn(dados) e retorna o tempo gasto em milissegundos."""
-    a = agora()
-    fn(dados)
-    return dif_time(agora(), a)
+def medir_com_timeout(fn, dados, timeout=TIMEOUT):
+    """
+    Executa fn(dados) em uma thread separada.
+    Retorna o tempo em ms, ou -1 se ultrapassar `timeout` segundos.
+    O valor -1 indica que o algoritmo foi descartado por exceder 1 minuto,
+    conforme requisito do enunciado.
+    """
+    resultado = [None]
+
+    def _executar():
+        try:
+            a = agora()
+            fn(dados.copy())
+            resultado[0] = dif_time(agora(), a)
+        except Exception:
+            resultado[0] = -1
+
+    t = threading.Thread(target=_executar, daemon=True)
+    t.start()
+    t.join(timeout)
+
+    if t.is_alive() or resultado[0] is None:
+        return -1   # timeout atingido
+    return resultado[0]
 
 
-def execucao(dados):
+def execucao(dados, desativados):
     """
-    Executa todos os algoritmos sobre uma cópia dos dados de entrada e
-    retorna a lista de tempos de execução em milissegundos.
+    Executa todos os algoritmos sobre uma cópia dos dados.
+    Algoritmos em `desativados` são pulados (já excederam 1 min antes).
+    Retorna lista de tempos; -1 = timeout, -2 = pulado.
     """
-    return [medir(fn, dados.copy()) for _, fn in ALGORITMOS]
+    tempos = []
+    for rotulo, fn in ALGORITMOS:
+        if rotulo in desativados:
+            tempos.append(-2)
+            print(f"    {rotulo:12s} — pulado (timeout anterior)")
+        else:
+            t = medir_com_timeout(fn, dados)
+            if t == -1:
+                desativados.add(rotulo)
+                print(f"    {rotulo:12s} — TIMEOUT (> {TIMEOUT}s) → desativado")
+            else:
+                print(f"    {rotulo:12s} — {t} ms")
+            tempos.append(t)
+    return tempos
 
 
 def teste():
@@ -68,23 +103,28 @@ def teste():
 
 
 # Execução principal
-# Aumenta o limite de recursão para os algoritmos recursivos profundos
 sys.setrecursionlimit(100_000)
-print(f"Limite de recursão: {sys.getrecursionlimit()}")
+print(f"Limite de recursão : {sys.getrecursionlimit()}")
+print(f"Cenário            : {CENARIO}")
+print(f"Tamanhos           : {[i * T for i in range(1, N + 1)]}")
+print(f"Timeout            : {TIMEOUT}s\n")
 
 gerar = GERADORES[CENARIO]
 resultados = []
+desativados = set()   # algoritmos que já excederam 1 minuto
 
 for i in range(1, N + 1):
     tamanho = i * T
-    print(f"Iteração {i:02d} — tamanho: {tamanho}")
+    print(f"Iteração {i:02d} — tamanho: {tamanho:,}")
     X = gerar(tamanho)
-    resultados.append(execucao(X))
+    resultados.append(execucao(X, desativados))
+    print()
 
-# Imprime e salva CSV
+
+# Impressão e salvamento CSV
 cabecalho = ",".join(rotulo for rotulo, _ in ALGORITMOS)
 linhas_csv = [cabecalho] + [",".join(str(t) for t in linha) for linha in resultados]
-print("\n".join(linhas_csv))
+print("\n" + "\n".join(linhas_csv))
 
 os.makedirs("docs", exist_ok=True)
 nome_arquivo = os.path.join("docs", f"resultado-{CENARIO}.csv")
@@ -92,3 +132,7 @@ with open(nome_arquivo, "w", encoding="utf-8") as f:
     f.write("\n".join(linhas_csv) + "\n")
 
 print(f"\nResultados salvos em: {nome_arquivo}")
+
+if desativados:
+    print(f"\nAlgoritmos desativados por timeout: {', '.join(sorted(desativados))}")
+    print("Seus valores no CSV estão marcados como -1 (timeout) ou -2 (pulado).")
