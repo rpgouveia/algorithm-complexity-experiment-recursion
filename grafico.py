@@ -44,7 +44,7 @@ def ler_csv(caminho):
     result = {}
     for col in rows[0]:
         result[col] = np.array([
-            np.nan if int(r[col]) < 0 else float(r[col]) for r in rows
+            np.nan if float(r[col]) < 0 else float(r[col]) for r in rows
         ])
     return len(rows), result
 
@@ -191,4 +191,131 @@ for alg in algoritmos:
     if SALVAR: fig.savefig(os.path.join(PASTA_SAIDA, f"{alg}.png"), dpi=180, bbox_inches="tight")
     plt.close(fig)
 
-print("\nGráficos gerados com equações e R² em docs/graficos/")
+print("\nGráficos de tempo gerados em docs/graficos/")
+
+
+# ── Gráficos de Memória ──────────────────────────────────────────────────────
+
+CENARIOS_MEM = {
+    "crescente":   "docs/resultado-crescente-memoria.csv",
+    "decrescente": "docs/resultado-decrescente-memoria.csv",
+    "random":      "docs/resultado-random-memoria.csv",
+}
+PASTA_MEM = os.path.join("docs", "graficos", "memoria")
+
+dados_mem, n_linhas_mem = {}, {}
+for cenario, caminho in CENARIOS_MEM.items():
+    if os.path.exists(caminho):
+        n, d = ler_csv(caminho)
+        dados_mem[cenario], n_linhas_mem[cenario] = d, n
+
+if not dados_mem:
+    print("\nNenhum CSV de memória encontrado. Execute experimento.py primeiro.")
+else:
+    os.makedirs(PASTA_MEM, exist_ok=True)
+    cenarios_mem_presentes = list(dados_mem.keys())
+    X_MAX_MEM = max(T_BASE * n for n in n_linhas_mem.values())
+
+    def kb_para_str(kb):
+        if np.isnan(kb) or kb < 0: return "—"
+        if kb < 1_024: return f"{kb:.0f} KB"
+        return f"{kb/1_024:.2f} MB"
+
+    for alg in algoritmos:
+        fig = plt.figure(figsize=(16, 8))
+        fig.patch.set_facecolor('#FAF9F6')
+        gs = gridspec.GridSpec(1, 2, width_ratios=[1.8, 1.2], figure=fig)
+        ax, ax_tab = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
+        ax_tab.axis("off")
+
+        ax.set_title(f"Memória – {ROTULOS.get(alg, alg)}", fontsize=14, fontweight="bold", pad=20)
+        ax.set_xlabel("Tamanho da Entrada (N)", fontsize=11, fontweight="bold")
+        ax.set_ylabel("Pico de Memória (KB)", fontsize=11, fontweight="bold")
+
+        texto_eq_mem = []
+        tem_dados_mem = False
+        prev_mem = {c: {} for c in cenarios_mem_presentes}
+        X_ext_mem = X_MAX_MEM * max(EXTRAPOLAR)
+        X_curva_mem = np.linspace(T_BASE, X_ext_mem, 600)
+
+        for cenario in cenarios_mem_presentes:
+            X = np.array([T_BASE * i for i in range(1, n_linhas_mem[cenario] + 1)])
+            y = dados_mem[cenario][alg]
+            cor = CORES[cenario]
+            p, coefs, grau = ajustar(X, y)
+            if p is None:
+                continue
+
+            tem_dados_mem = True
+            mascara = ~np.isnan(y)
+            r2 = r_quadrado(X, y, p)
+            y_curva = np.array([p(xi) for xi in X_curva_mem])
+
+            ax.scatter(X[mascara], y[mascara], color=cor, s=40, zorder=5, alpha=0.9)
+            ax.plot(X_curva_mem, y_curva, color=cor, linewidth=2.5,
+                    label=cenario.capitalize(), alpha=0.8)
+
+            eq_str = formatar_equacao(coefs, grau)
+            texto_eq_mem.append(f"{cenario.capitalize()}: {eq_str} | R²={r2:.4f}")
+            for m in EXTRAPOLAR:
+                prev_mem[cenario][m] = kb_para_str(p(X_MAX_MEM * m))
+
+            ax.annotate(f"~ {'O(N²)' if grau == 2 else 'O(N)'}",
+                        xy=(X_curva_mem[-1], y_curva[-1]),
+                        xytext=(5, 0), textcoords="offset points",
+                        va="center", fontsize=9, fontweight='bold', color=cor)
+
+        if texto_eq_mem:
+            ax.text(0.02, 0.97, "Modelos Matemáticos:\n" + "\n".join(texto_eq_mem),
+                    transform=ax.transAxes, fontsize=9, verticalalignment="top",
+                    fontfamily="monospace",
+                    bbox=dict(boxstyle="round,pad=0.6", facecolor="white",
+                              edgecolor="#2C3E50", alpha=0.9))
+
+        ax.axvline(X_MAX_MEM, color="#333", linestyle="--", linewidth=1, alpha=0.5)
+        if tem_dados_mem:
+            ax.legend(loc="lower right", frameon=True, shadow=True)
+        ax.grid(True, linestyle="--", alpha=0.4)
+        ax.set_xlim(0, X_ext_mem * 1.05)
+        ax.set_ylim(bottom=0)
+
+        # Tabela de dados observados e previsões
+        if tem_dados_mem:
+            cab = ["N"] + [c.capitalize() for c in cenarios_mem_presentes]
+            linhas_tab_m = []
+            for i in range(max(n_linhas_mem.values())):
+                n_val = T_BASE * (i + 1)
+                lin = [f"{n_val:,}"]
+                for c in cenarios_mem_presentes:
+                    y_arr = dados_mem[c][alg]
+                    lin.append(kb_para_str(y_arr[i]) if i < len(y_arr) else "—")
+                linhas_tab_m.append(lin)
+
+            linhas_tab_m.append(["PREVISÕES (Regressão)", "", "", ""])
+            for m in EXTRAPOLAR:
+                linhas_tab_m.append(
+                    [f"{m}x ({int(X_MAX_MEM * m):,})"] +
+                    [prev_mem[c].get(m, "—") for c in cenarios_mem_presentes]
+                )
+
+            tbl = ax_tab.table(cellText=linhas_tab_m, colLabels=cab,
+                               loc="center", cellLoc="center")
+            tbl.auto_set_font_size(False); tbl.set_fontsize(9); tbl.scale(1, 2.1)
+            for j in range(len(cab)):
+                tbl[0, j].set_facecolor("#2C3E50")
+                tbl[0, j].set_text_props(color="white", fontweight="bold")
+            for i in range(1, len(linhas_tab_m) + 1):
+                if "PREVISÕES" in linhas_tab_m[i - 1][0]:
+                    for j in range(len(cab)):
+                        tbl[i, j].set_facecolor("#BDC3C7")
+                else:
+                    for j in range(len(cab)):
+                        tbl[i, j].set_facecolor("#F8F9F9" if i % 2 == 0 else "white")
+            ax_tab.set_title("Dados Observados e Futuros (Memória)",
+                             fontsize=12, fontweight="bold", pad=20)
+
+        plt.tight_layout()
+        fig.savefig(os.path.join(PASTA_MEM, f"{alg}_memoria.png"), dpi=180, bbox_inches="tight")
+        plt.close(fig)
+
+    print("Gráficos de memória gerados em docs/graficos/memoria/")

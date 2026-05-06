@@ -1,6 +1,7 @@
 import sys
 import os
 import threading
+import tracemalloc
 from algorithms.quick_sort_recursivo import quick_sort_recursivo_wapper
 from algorithms.quick_sort_random import quick_sort_recursivo_random_wapper
 from algorithms.merge_sort_interativo import Merge_Sort_interativo_wapper
@@ -46,49 +47,59 @@ ALGORITMOS = [
 def medir_com_timeout(fn, dados, timeout=TIMEOUT):
     """
     Executa fn(dados) em uma thread separada.
-    Retorna o tempo em ms, ou -1 se ultrapassar `timeout` segundos.
-    O valor -1 indica que o algoritmo foi descartado por exceder 1 minuto,
-    conforme requisito do enunciado.
+    Retorna (tempo_ms, pico_kb), ou (-1, -1) se ultrapassar `timeout` segundos.
     """
     resultado = [None]
+    memoria_kb = [None]
 
     def _executar():
         try:
+            tracemalloc.start()
             a = agora()
             fn(dados.copy())
-            resultado[0] = dif_time(agora(), a)
+            tempo = dif_time(agora(), a)
+            _, pico = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            resultado[0] = tempo
+            memoria_kb[0] = pico / 1024
         except Exception:
+            if tracemalloc.is_tracing():
+                tracemalloc.stop()
             resultado[0] = -1
+            memoria_kb[0] = -1
 
     t = threading.Thread(target=_executar, daemon=True)
     t.start()
     t.join(timeout)
 
     if t.is_alive() or resultado[0] is None:
-        return -1   # timeout atingido
-    return resultado[0]
+        return -1, -1   # timeout atingido
+    return resultado[0], memoria_kb[0]
 
 
 def execucao(dados, desativados):
     """
     Executa todos os algoritmos sobre uma cópia dos dados.
     Algoritmos em `desativados` são pulados (já excederam 1 min antes).
-    Retorna lista de tempos; -1 = timeout, -2 = pulado.
+    Retorna (lista_tempos, lista_memorias_kb); -1 = timeout, -2 = pulado.
     """
     tempos = []
+    memorias = []
     for rotulo, fn in ALGORITMOS:
         if rotulo in desativados:
             tempos.append(-2)
+            memorias.append(-2)
             print(f"    {rotulo:12s} — pulado (timeout anterior)")
         else:
-            t = medir_com_timeout(fn, dados)
+            t, mem = medir_com_timeout(fn, dados)
             if t == -1:
                 desativados.add(rotulo)
                 print(f"    {rotulo:12s} — TIMEOUT (> {TIMEOUT}s) → desativado")
             else:
-                print(f"    {rotulo:12s} — {t} ms")
+                print(f"    {rotulo:12s} — {t} ms | {mem:.1f} KB")
             tempos.append(t)
-    return tempos
+            memorias.append(round(mem, 2) if mem >= 0 else mem)
+    return tempos, memorias
 
 
 def teste():
@@ -110,28 +121,36 @@ print(f"Tamanhos           : {[i * T for i in range(1, N + 1)]}")
 print(f"Timeout            : {TIMEOUT}s\n")
 
 gerar = GERADORES[CENARIO]
-resultados = []
+resultados_tempo = []
+resultados_memoria = []
 desativados = set()   # algoritmos que já excederam 1 minuto
 
 for i in range(1, N + 1):
     tamanho = i * T
     print(f"Iteração {i:02d} — tamanho: {tamanho:,}")
     X = gerar(tamanho)
-    resultados.append(execucao(X, desativados))
+    tempos, memorias = execucao(X, desativados)
+    resultados_tempo.append(tempos)
+    resultados_memoria.append(memorias)
     print()
 
 
 # Impressão e salvamento CSV
 cabecalho = ",".join(rotulo for rotulo, _ in ALGORITMOS)
-linhas_csv = [cabecalho] + [",".join(str(t) for t in linha) for linha in resultados]
-print("\n" + "\n".join(linhas_csv))
-
 os.makedirs("docs", exist_ok=True)
-nome_arquivo = os.path.join("docs", f"resultado-{CENARIO}.csv")
-with open(nome_arquivo, "w", encoding="utf-8") as f:
-    f.write("\n".join(linhas_csv) + "\n")
 
-print(f"\nResultados salvos em: {nome_arquivo}")
+linhas_tempo = [cabecalho] + [",".join(str(t) for t in linha) for linha in resultados_tempo]
+print("\n" + "\n".join(linhas_tempo))
+nome_tempo = os.path.join("docs", f"resultado-{CENARIO}.csv")
+with open(nome_tempo, "w", encoding="utf-8") as f:
+    f.write("\n".join(linhas_tempo) + "\n")
+print(f"\nTempos salvos em: {nome_tempo}")
+
+linhas_mem = [cabecalho] + [",".join(str(m) for m in linha) for linha in resultados_memoria]
+nome_mem = os.path.join("docs", f"resultado-{CENARIO}-memoria.csv")
+with open(nome_mem, "w", encoding="utf-8") as f:
+    f.write("\n".join(linhas_mem) + "\n")
+print(f"Memória salva em: {nome_mem}")
 
 if desativados:
     print(f"\nAlgoritmos desativados por timeout: {', '.join(sorted(desativados))}")
